@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building, ExternalLink, Globe, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, Building, ExternalLink, Globe, Mail, MapPin, Phone, Smartphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusBadge, PriorityBadge, VerifiedBadge } from "@/components/shared/status-badges";
@@ -61,6 +61,10 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             <CardContent className="space-y-2 text-sm">
               <p className="flex items-center gap-2"><Mail className="size-4 text-slate-400" />{l.business_email ? <a className="text-brand-600 hover:underline" href={`mailto:${l.business_email}`}>{l.business_email}</a> : "—"}{l.business_email ? (l.email_verified ? <Badge tone="emerald">verified</Badge> : <Badge>unverified</Badge>) : null}</p>
               <p className="flex items-center gap-2"><Phone className="size-4 text-slate-400" />{l.business_phone ?? "—"}{l.business_phone ? (l.phone_verified ? <Badge tone="emerald">verified</Badge> : <Badge>unverified</Badge>) : null}</p>
+              {l.personal_email ? <p className="flex items-center gap-2"><Mail className="size-4 text-slate-400" /><a className="text-brand-600 hover:underline" href={`mailto:${l.personal_email}`}>{l.personal_email}</a><Badge>personal</Badge></p> : null}
+              {l.mobile_phone ? <p className="flex items-center gap-2"><Smartphone className="size-4 text-slate-400" /><a className="hover:underline" href={`tel:${l.mobile_phone.replace(/[^+\d]/g, "")}`}>{l.mobile_phone}</a><Badge>mobile</Badge></p> : null}
+              {l.company_email ? <p className="flex items-center gap-2"><Mail className="size-4 text-slate-400" /><a className="text-brand-600 hover:underline" href={`mailto:${l.company_email}`}>{l.company_email}</a><Badge>company</Badge></p> : null}
+              {l.company_phone ? <p className="flex items-center gap-2"><Phone className="size-4 text-slate-400" />{l.company_phone}<Badge>company</Badge></p> : null}
               <p className="flex items-center gap-2"><ExternalLink className="size-4 text-slate-400" />{l.linkedin_url ? <a className="text-brand-600 hover:underline" href={l.linkedin_url} target="_blank" rel="noopener noreferrer">LinkedIn profile</a> : "—"}</p>
               <p className="flex items-center gap-2"><Globe className="size-4 text-slate-400" />{l.company_website ? <a className="text-brand-600 hover:underline" href={l.company_website} target="_blank" rel="noopener noreferrer">{l.company_website.replace(/^https?:\/\//, "")}</a> : "—"}</p>
               <p className="flex items-center gap-2"><MapPin className="size-4 text-slate-400" />{[l.city, l.state, l.country].filter(Boolean).join(", ") || "—"}</p>

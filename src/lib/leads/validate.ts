@@ -8,6 +8,15 @@ import { findCountry } from "@/lib/locations";
 const optStr = (max = 500) =>
   z.string().max(max).nullish().transform((v) => (v === undefined || v === null || v.trim() === "" ? null : v.trim()));
 
+const emailField = (msg: string) =>
+  optStr(320)
+    .transform((v) => (v ? v.replace(/^mailto:/i, "").trim() : v))
+    .refine((v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), msg);
+const phoneField = (msg: string) =>
+  optStr(60)
+    .transform((v) => (v ? v.replace(/^tel:/i, "").trim() : v))
+    .refine((v) => !v || /^[+()\d\s.\-x/ext]{5,60}$/i.test(v), msg);
+
 const optDate = z
   .string()
   .nullish()
@@ -38,11 +47,12 @@ export const leadInputSchema = z
       "LinkedIn URL must point to linkedin.com",
     ),
     company_website: optStr(500),
-    business_email: optStr(320).refine(
-      (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-      "Invalid email address",
-    ),
-    business_phone: optStr(60).refine((v) => !v || /^[+()\d\s.\-x/ext]{5,60}$/i.test(v), "Invalid phone number"),
+    business_email: emailField("Invalid email address"),
+    business_phone: phoneField("Invalid phone number"),
+    personal_email: emailField("Invalid personal email"),
+    mobile_phone: phoneField("Invalid mobile number"),
+    company_email: emailField("Invalid company email"),
+    company_phone: phoneField("Invalid company phone"),
     company_size: optStr(60),
     seniority: optStr(100),
     department: optStr(150),

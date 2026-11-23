@@ -60,3 +60,27 @@ describe("country normalisation", () => {
     expect(r2.ok && r2.lead.country).toBe("Narnia");
   });
 });
+
+describe("contact fields", () => {
+  it("maps email and phone columns to the right fields", () => {
+    const m = autoMapColumns(["Name", "Work Email", "Personal Email", "Mobile Phone", "Direct Phone", "Company Email Address", "Company Phone", "Company"]);
+    expect(m["Work Email"]).toBe("business_email");
+    expect(m["Personal Email"]).toBe("personal_email");
+    expect(m["Mobile Phone"]).toBe("mobile_phone");
+    expect(m["Direct Phone"]).toBe("business_phone");
+    expect(m["Company Email Address"]).toBe("company_email");
+    expect(m["Company Phone"]).toBe("company_phone");
+    expect(m["Company"]).toBe("company_name");
+  });
+  it("validates and cleans contact values", () => {
+    const map = { Name: "full_name", P: "personal_email", M: "mobile_phone", CE: "company_email", CP: "company_phone" };
+    const ok = mapAndValidateRow({ Name: "Sara", P: "mailto:sara@gmail.com", M: "tel:+92 300 1234567", CE: "info@co.com", CP: "(051) 111-222" }, map as never);
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.lead.personal_email).toBe("sara@gmail.com");
+      expect(ok.lead.mobile_phone).toBe("+92 300 1234567");
+    }
+    const bad = mapAndValidateRow({ Name: "Sara", CE: "not-an-email" }, map as never);
+    expect(bad.ok).toBe(false);
+  });
+});

@@ -17,7 +17,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
   let q = supabase.from("companies_with_counts").select("*", { count: "exact" }).order(sort, { ascending: sort === "name" }).range((page - 1) * per, page * per - 1);
   if (sp.q) q = q.ilike("name", `%${sp.q.replace(/[%_\\*]/g, "")}%`);
   const { data, count } = await q;
-  const rows = (data ?? []) as { id: string; name: string; website: string | null; industry: string | null; company_size: string | null; country: string | null; city: string | null; lead_count: number }[];
+  const rows = (data ?? []) as { id: string; name: string; website: string | null; email: string | null; phone: string | null; industry: string | null; company_size: string | null; country: string | null; city: string | null; lead_count: number }[];
   const pages = Math.max(1, Math.ceil((count ?? 0) / per));
   const link = (p: Record<string, string>) => `?${new URLSearchParams({ ...(sp.q ? { q: sp.q } : {}), ...(sp.sort ? { sort: sp.sort } : {}), ...p })}`;
   return (
@@ -29,9 +29,9 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
       </form>
       <div className="rounded-xl border bg-white shadow-xs">
         <Table>
-          <THead><TR><TH><Link href={link({ sort: "name" })}>Company</Link></TH><TH>Industry</TH><TH>Size</TH><TH>Location</TH><TH>Website</TH><TH className="text-right"><Link href={link({ sort: "leads" })}>Leads</Link></TH></TR></THead>
+          <THead><TR><TH><Link href={link({ sort: "name" })}>Company</Link></TH><TH>Industry</TH><TH>Size</TH><TH>Location</TH><TH>Website</TH><TH>Email / phone</TH><TH className="text-right"><Link href={link({ sort: "leads" })}>Leads</Link></TH></TR></THead>
           <TBody>
-            {rows.length === 0 ? <TR><TD colSpan={6} className="py-12 text-center text-slate-400">No companies yet</TD></TR> : null}
+            {rows.length === 0 ? <TR><TD colSpan={7} className="py-12 text-center text-slate-400">No companies yet</TD></TR> : null}
             {rows.map((c) => (
               <TR key={c.id}>
                 <TD className="font-medium"><Link className="hover:text-brand-600 hover:underline" href={`/leads?company_id=${c.id}`}>{c.name}</Link></TD>
@@ -39,6 +39,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
                 <TD>{c.company_size ?? "—"}</TD>
                 <TD>{[c.city, c.country].filter(Boolean).join(", ") || "—"}</TD>
                 <TD className="max-w-48 truncate">{c.website ? <a className="text-brand-600 hover:underline" href={c.website} target="_blank" rel="noopener noreferrer">{c.website.replace(/^https?:\/\//, "")}</a> : "—"}</TD>
+                <TD className="max-w-56 text-xs">{c.email || c.phone ? <div className="space-y-0.5">{c.email ? <a className="block truncate text-brand-600 hover:underline" href={`mailto:${c.email}`}>{c.email}</a> : null}{c.phone ? <span className="block truncate text-slate-600">{c.phone}</span> : null}</div> : "—"}</TD>
                 <TD className="text-right tabular-nums">{formatNumber(Number(c.lead_count))}</TD>
               </TR>
             ))}

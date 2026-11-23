@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import { LEAD_STATUSES, ORIGINS, PRIORITIES } from "@/lib/constants";
 
-const KEYS = ["q", "status", "priority", "country", "city", "industry", "job_title", "company", "origin", "verified", "has_email", "list_id"];
+const KEYS = ["q", "status", "priority", "country", "city", "industry", "job_title", "company", "origin", "verified", "has_email", "has_phone", "list_id"];
 
 export function useUrlParams() {
   const router = useRouter();
@@ -86,6 +86,11 @@ export function LeadFilterBar({ hide = [] }: { hide?: string[] }) {
           <option value="">Email: any</option>
           <option value="yes">Has email</option>
           <option value="no">No email</option>
+        </Select>
+        <Select value={sp.get("has_phone") ?? ""} onChange={(e) => set({ has_phone: e.target.value })} className="h-8 w-[calc(50%-4px)] text-xs sm:w-32">
+          <option value="">Phone: any</option>
+          <option value="yes">Has phone</option>
+          <option value="no">No phone</option>
         </Select>
         {active > 0 ? (
           <Button

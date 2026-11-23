@@ -95,6 +95,10 @@ export function LeadForm({ lead, onDone }: { lead?: Lead; onDone?: () => void })
           <Field label="Business phone" className="flex-1"><Input name="business_phone" defaultValue={v("business_phone")} /></Field>
           <label className="mb-2 flex items-center gap-1.5 text-xs text-slate-600"><Checkbox name="phone_verified" defaultChecked={lead?.phone_verified} /> Verified</label>
         </div>
+        <Field label="Personal email"><Input name="personal_email" type="email" defaultValue={v("personal_email")} /></Field>
+        <Field label="Mobile phone"><Input name="mobile_phone" type="tel" defaultValue={v("mobile_phone")} /></Field>
+        <Field label="Company email"><Input name="company_email" type="email" defaultValue={v("company_email")} placeholder="info@company.com" /></Field>
+        <Field label="Company phone"><Input name="company_phone" type="tel" defaultValue={v("company_phone")} /></Field>
       </section>
       <section className="grid gap-4 sm:grid-cols-4">
         <Field label="Status">

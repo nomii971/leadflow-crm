@@ -14,7 +14,7 @@ import {
 const API = "https://api.hubapi.com";
 const SEARCH_RESULT_CAP = 10_000; // HubSpot search API returns at most 10k results per query
 const PROPERTIES = [
-  "firstname", "lastname", "email", "phone", "mobilephone", "jobtitle", "company", "industry", "city", "state",
+  "firstname", "lastname", "email", "work_email", "phone", "mobilephone", "jobtitle", "company", "industry", "city", "state",
   "country", "website", "hs_linkedin_url", "linkedin_url", "seniority", "hs_seniority", "department",
   "numemployees", "lifecyclestage", "createdate",
 ];
@@ -68,8 +68,11 @@ function toLead(p: Record<string, string | null>) {
   return {
     first_name: p.firstname,
     last_name: p.lastname,
-    business_email: p.email,
-    business_phone: p.phone || p.mobilephone,
+    // Some portals keep a separate work_email; then the main email is treated as the personal one.
+    business_email: p.work_email || p.email,
+    personal_email: p.work_email && p.email && p.email.toLowerCase() !== p.work_email.toLowerCase() ? p.email : null,
+    business_phone: p.phone,
+    mobile_phone: p.mobilephone,
     job_title: p.jobtitle,
     company_name: p.company,
     industry: p.industry,

@@ -3,7 +3,7 @@
 export type LeadFieldKey =
   | "full_name" | "first_name" | "last_name" | "job_title" | "company_name" | "industry"
   | "country" | "state" | "city" | "region" | "linkedin_url" | "company_website" | "business_email"
-  | "business_phone" | "company_size" | "seniority" | "department" | "lead_source" | "source_reference"
+  | "business_phone" | "personal_email" | "mobile_phone" | "company_email" | "company_phone" | "company_size" | "seniority" | "department" | "lead_source" | "source_reference"
   | "status" | "priority" | "notes" | "last_contacted_at" | "collected_at"
   | "email_verified" | "phone_verified" | "is_verified" | "created_at" | "origin";
 
@@ -27,8 +27,12 @@ export const LEAD_FIELDS: LeadFieldDef[] = [
   { key: "region", label: "Region", importable: true, aliases: ["region", "geography", "geo", "location", "area"] },
   { key: "linkedin_url", label: "LinkedIn Profile URL", importable: true, aliases: ["linkedin", "linkedin url", "linkedin profile", "linkedin profile url", "profile url", "person linkedin url", "sales navigator url", "lead url", "hs_linkedin_url"] },
   { key: "company_website", label: "Company Website", importable: true, aliases: ["website", "company website", "domain", "company domain", "url", "web site"] },
-  { key: "business_email", label: "Business Email", importable: true, aliases: ["email", "business email", "work email", "email address", "e-mail", "corporate email"] },
-  { key: "business_phone", label: "Business Phone", importable: true, aliases: ["phone", "business phone", "work phone", "phone number", "mobile", "telephone", "direct phone"] },
+  { key: "business_email", label: "Business Email", importable: true, aliases: ["email", "business email", "work email", "email address", "e-mail", "corporate email", "professional email", "office email", "email 1", "primary email"] },
+  { key: "business_phone", label: "Business Phone", importable: true, aliases: ["phone", "business phone", "work phone", "phone number", "telephone", "direct phone", "direct dial", "office phone", "work direct phone", "phone 1", "primary phone", "tel"] },
+  { key: "personal_email", label: "Personal Email", importable: true, aliases: ["personal email", "private email", "home email", "other email", "secondary email", "email 2", "alternate email", "additional email"] },
+  { key: "mobile_phone", label: "Mobile Phone", importable: true, aliases: ["mobile", "mobile phone", "mobile number", "cell", "cell phone", "cellphone", "mobilephone", "personal phone", "whatsapp", "phone 2"] },
+  { key: "company_email", label: "Company Email", importable: true, aliases: ["company email", "company email address", "general email", "info email", "account email", "organization email", "organisation email", "company contact email"] },
+  { key: "company_phone", label: "Company Phone", importable: true, aliases: ["company phone", "company phone number", "corporate phone", "main phone", "headquarters phone", "hq phone", "switchboard", "account phone", "organization phone", "organisation phone", "company telephone"] },
   { key: "company_size", label: "Company Size", importable: true, aliases: ["company size", "employees", "employee count", "headcount", "# employees", "number of employees", "size"] },
   { key: "seniority", label: "Seniority", importable: true, aliases: ["seniority", "seniority level", "level"] },
   { key: "department", label: "Department", importable: true, aliases: ["department", "function", "job function", "team"] },
@@ -55,18 +59,24 @@ const clean = (h: string) => h.toLowerCase().replace(/[_\-.]+/g, " ").replace(/\
 export function autoMapColumns(headers: string[]): Record<string, LeadFieldKey | ""> {
   const mapping: Record<string, LeadFieldKey | ""> = {};
   const used = new Set<LeadFieldKey>();
-  // exact alias matches first, then "contains" matches
+  // exact alias matches first, then "contains" matches (longest alias wins, so "Company Email Address"
+  // becomes Company Email rather than Company Name)
   for (const pass of ["exact", "contains"] as const) {
     for (const h of headers) {
       if (mapping[h]) continue;
       const ch = clean(h);
-      const match = IMPORTABLE_FIELDS.find(
-        (f) =>
-          !used.has(f.key) &&
-          (pass === "exact"
-            ? f.aliases.includes(ch) || clean(f.label) === ch || f.key.replace(/_/g, " ") === ch
-            : f.aliases.some((a) => a.length > 3 && ch.includes(a))),
-      );
+      let match: LeadFieldDef | undefined;
+      if (pass === "exact") {
+        match = IMPORTABLE_FIELDS.find(
+          (f) => !used.has(f.key) && (f.aliases.includes(ch) || clean(f.label) === ch || f.key.replace(/_/g, " ") === ch),
+        );
+      } else {
+        let best = 0;
+        for (const f of IMPORTABLE_FIELDS) {
+          if (used.has(f.key)) continue;
+          for (const a of f.aliases) if (a.length > 3 && a.length > best && ch.includes(a)) { best = a.length; match = f; }
+        }
+      }
       if (match) {
         mapping[h] = match.key;
         used.add(match.key);
@@ -83,6 +93,6 @@ export const DEFAULT_TABLE_COLUMNS: LeadFieldKey[] = [
 
 export const EXPORT_DEFAULT_COLUMNS: LeadFieldKey[] = [
   "full_name", "first_name", "last_name", "job_title", "company_name", "industry", "country", "state", "city",
-  "linkedin_url", "company_website", "business_email", "business_phone", "company_size", "seniority",
+  "linkedin_url", "company_website", "business_email", "business_phone", "personal_email", "mobile_phone", "company_email", "company_phone", "company_size", "seniority",
   "department", "lead_source", "status", "priority", "created_at", "last_contacted_at", "notes",
 ];

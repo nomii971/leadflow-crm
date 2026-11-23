@@ -20,6 +20,7 @@ export const leadFiltersSchema = z.object({
   import_job_id: z.string().uuid().optional(),
   verified: z.enum(["yes", "no"]).optional(),
   has_email: z.enum(["yes", "no"]).optional(),
+  has_phone: z.enum(["yes", "no"]).optional(),
   created_from: z.string().max(30).optional(),
   created_to: z.string().max(30).optional(),
 });
@@ -65,8 +66,11 @@ export function applyLeadFilters<Q extends { [k: string]: any }>(query: Q, f: Le
   if (f.collection_job_id) q = q.eq("collection_job_id", f.collection_job_id);
   if (f.import_job_id) q = q.eq("import_job_id", f.import_job_id);
   if (f.verified) q = q.eq("is_verified", f.verified === "yes");
-  if (f.has_email === "yes") q = q.not("business_email", "is", null);
-  if (f.has_email === "no") q = q.is("business_email", null);
+  // "Has email / phone" looks at the person's and the company's contact fields.
+  if (f.has_email === "yes") q = q.or("business_email.not.is.null,personal_email.not.is.null,company_email.not.is.null");
+  if (f.has_email === "no") q = q.is("business_email", null).is("personal_email", null).is("company_email", null);
+  if (f.has_phone === "yes") q = q.or("business_phone.not.is.null,mobile_phone.not.is.null,company_phone.not.is.null");
+  if (f.has_phone === "no") q = q.is("business_phone", null).is("mobile_phone", null).is("company_phone", null);
   if (f.created_from) q = q.gte("created_at", f.created_from);
   if (f.created_to) q = q.lte("created_at", `${f.created_to}T23:59:59.999Z`);
   if (f.list_id) q = q.eq("lead_list_members.list_id", f.list_id);

@@ -15,6 +15,10 @@ export interface Lead {
   company_website: string | null;
   business_email: string | null;
   business_phone: string | null;
+  personal_email: string | null;
+  mobile_phone: string | null;
+  company_email: string | null;
+  company_phone: string | null;
   company_size: string | null;
   seniority: string | null;
   department: string | null;

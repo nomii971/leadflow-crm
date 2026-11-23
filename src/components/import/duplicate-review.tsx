@@ -14,7 +14,7 @@ type Review = {
   incoming: Record<string, unknown>; matched: Record<string, unknown> | null; matched_lead_id: string | null;
 };
 
-const COMPARE = ["full_name", "job_title", "company_name", "business_email", "linkedin_url", "business_phone", "city", "country", "industry"];
+const COMPARE = ["full_name", "job_title", "company_name", "business_email", "linkedin_url", "business_phone", "personal_email", "mobile_phone", "company_email", "company_phone", "city", "country", "industry"];
 const MATCH_LABEL: Record<string, string> = { linkedin_url: "Same LinkedIn URL", email: "Same email", name_company: "Same name + company (uncertain)" };
 
 export function DuplicateReviewList({ reviews }: { reviews: Review[] }) {

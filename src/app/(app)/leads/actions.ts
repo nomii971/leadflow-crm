@@ -12,7 +12,7 @@ type Result<T = undefined> = { ok: true; data?: T; message?: string } | { ok: fa
 
 const LEAD_FORM_FIELDS = [
   "full_name", "first_name", "last_name", "job_title", "company_name", "industry", "country", "state", "city", "region",
-  "linkedin_url", "company_website", "business_email", "business_phone", "company_size", "seniority", "department",
+  "linkedin_url", "company_website", "business_email", "business_phone", "personal_email", "mobile_phone", "company_email", "company_phone", "company_size", "seniority", "department",
   "lead_source", "source_reference", "status", "priority", "notes", "last_contacted_at",
 ];
 
