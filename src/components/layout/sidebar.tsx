@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -78,9 +79,8 @@ export function Sidebar({ email, overdue }: { email: string; overdue: number }) 
 
   const body = (
     <div className="flex h-full flex-col bg-sidebar py-5">
-      <Link href="/dashboard" className="mb-6 flex items-center gap-2.5 px-6">
-        <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white">LF</span>
-        <span className="text-[15px] font-semibold tracking-tight text-white">LeadFlow CRM</span>
+      <Link href="/dashboard" className="mb-6 flex items-center px-6" aria-label="LeadFlow CRM dashboard">
+        <Logo tone="dark" />
       </Link>
       {nav}
       <div className="mx-3 mt-4 flex items-center gap-3 rounded-xl border border-white/5 bg-sidebar-muted p-3">
@@ -102,7 +102,7 @@ export function Sidebar({ email, overdue }: { email: string; overdue: number }) 
     <>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">{body}</aside>
       <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-sidebar px-4 py-3 lg:hidden">
-        <span className="font-semibold text-white">LeadFlow CRM</span>
+        <Link href="/dashboard" aria-label="LeadFlow CRM dashboard"><Logo tone="dark" markClassName="size-7" /></Link>
         <button onClick={() => setOpen(true)} className="text-slate-200" aria-label="Open menu"><Menu className="size-5" /></button>
       </div>
       {open ? (
