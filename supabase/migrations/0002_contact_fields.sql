@@ -13,8 +13,10 @@ alter table public.companies
   add column if not exists phone text;
 
 -- Search also covers the new emails and phone numbers.
-drop index if exists public.leads_search_trgm;
-alter table public.leads drop column if exists search_text;
+-- The old column, index and view are renamed (*_v1) rather than dropped, matching how this was applied
+-- to the live project. They are unused and can be dropped later.
+alter index public.leads_search_trgm rename to leads_search_trgm_v1;
+alter table public.leads rename column search_text to search_text_v1;
 alter table public.leads add column search_text text generated always as (
   lower(coalesce(full_name,'') || ' ' || coalesce(job_title,'') || ' ' || coalesce(company_name,'') || ' ' ||
         coalesce(business_email,'') || ' ' || coalesce(personal_email,'') || ' ' || coalesce(company_email,'') || ' ' ||
@@ -61,7 +63,8 @@ begin
 end $$;
 
 -- c.* in a view is expanded when the view is created, so recreate it to include the new columns.
-drop view if exists public.companies_with_counts;
+alter view public.companies_with_counts rename to companies_with_counts_v1;
+revoke all on public.companies_with_counts_v1 from anon, authenticated;
 create view public.companies_with_counts with (security_invoker = true) as
   select c.*, (select count(*) from public.leads l where l.company_id = c.id) as lead_count
   from public.companies c;
