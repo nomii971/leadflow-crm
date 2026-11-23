@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAllowedUser, supabaseAnonKey, supabaseUrl } from "@/lib/env";
 
 const PUBLIC_PATHS = ["/login", "/auth", "/setup"];
 
 export async function middleware(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = supabaseUrl();
+  const key = supabaseAnonKey();
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 
@@ -28,8 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
   const user = data.user;
-  const admin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const allowed = !!user && (!admin || (user.email ?? "").toLowerCase() === admin);
+  const allowed = !!user && isAllowedUser(user.email);
 
   if (!allowed && !isPublic) {
     if (path.startsWith("/api/")) {
