@@ -16,7 +16,7 @@ Stack (all free tier): Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 
 | **Duplicate detection** | LinkedIn URL (normalised), business email, name + company (legal suffixes ignored). Strategies: skip, update existing, keep both, review. Uncertain (name + company) matches are **never merged automatically**: they go to the review queue with a side-by-side comparison. |
 | **Leads** | Server-side search, filters, sorting, pagination; bulk select (page or *all matching*), bulk status / priority / add to list / export / delete; custom columns; full profiles with business / personal email, business / mobile phone and company email / phone (from your imports, HubSpot or manual entry; verified vs unverified), source + collection date, notes, activities, follow-ups. |
 | **Lists, pipeline, follow-ups** | Custom lists with stats and export · drag-and-drop Kanban (New → Won/Lost) · calls, emails, LinkedIn messages, meetings, notes · tasks with due dates, priorities, overdue / upcoming views. |
-| **Export Center** | All / filtered / by country / city / industry / job title / list / collection job, choose columns, CSV or XLSX. CSV cells are protected against formula injection. |
+| **Export Center** | All / filtered / by country / city / industry / job title / list / collection job, choose columns, CSV or XLSX. Optional **Export & delete** removes exactly the downloaded leads (and their notes, activities, tasks) to free space; the dashboard shows database usage against the 500 MB free limit. CSV cells are protected against formula injection. |
 | **Dashboard** | Totals, new, imported, contacted, interested, qualified, converted, companies; charts for growth, country, city, industry, status, import history; recent jobs and imports. All from live database queries. |
 
 ### What it deliberately does not do
@@ -33,7 +33,7 @@ Stack (all free tier): Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 
 
 ### 1. Supabase
 1. Create a free project at <https://supabase.com>.
-2. **SQL Editor** → paste and run `supabase/migrations/0001_init.sql`, then `0002_contact_fields.sql` (run the files in order).
+2. **SQL Editor** → paste and run `supabase/migrations/0001_init.sql`, then `0002_contact_fields.sql` and `0003_storage_and_export_delete.sql` (run the files in order).
 3. **Authentication → Users → Add user**: your email + a strong password (tick "Auto confirm").
 4. **Authentication → Sign In / Providers**: turn **off** "Allow new users to sign up".
 5. **Project Settings → API**: copy the *Project URL* and the *anon public* key.

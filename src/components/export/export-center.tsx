@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, Field, Input, Select } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/misc";
+import { Callout, Spinner } from "@/components/ui/misc";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { EXPORT_DEFAULT_COLUMNS, LEAD_FIELDS, type LeadFieldKey } from "@/lib/leads/fields";
 import { LEAD_STATUSES } from "@/lib/constants";
 import type { LeadFilters } from "@/lib/leads/query";
@@ -31,6 +33,36 @@ export function ExportCenter({ lists, jobs, top }: {
   const [columns, setColumns] = useState<LeadFieldKey[]>(EXPORT_DEFAULT_COLUMNS);
   const [count, setCount] = useState<number | null>(null);
   const [pending, start] = useTransition();
+  const [deleteAfter, setDeleteAfter] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const router = useRouter();
+
+  const runExport = () => start(async () => {
+    let res;
+    try { res = await downloadExport({ target: { filters }, format, columns, name }); }
+    catch (e) { toast.error((e as Error).message); return; }
+    if (!deleteAfter) { toast.success("Download started"); return; }
+    if (res.capped || !res.exportedAt) {
+      toast.warning("Download started. Nothing was deleted: this export hit the 100,000-row limit, so export in smaller parts to delete.");
+      return;
+    }
+    toast.success(`Download started (${formatNumber(res.count)} leads). Removing them from the database…`);
+    try {
+      const r = await fetch("/api/export/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filters, exportedAt: res.exportedAt, exportedCount: res.count }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error ?? `Delete failed (${r.status})`);
+      const kept = j.kept > 0 ? ` ${formatNumber(j.kept)} ${j.kept === 1 ? "lead was" : "leads were"} kept because ${j.kept === 1 ? "it" : "they"} changed after the export.` : "";
+      toast.success(`Deleted ${formatNumber(j.deleted)} exported leads from the database.${kept}`);
+      setCount(null);
+      router.refresh();
+    } catch (e) {
+      toast.error(`Your file was downloaded, but deleting failed: ${(e as Error).message}`);
+    }
+  });
 
   const filters: LeadFilters =
     scope === "all" ? {} :
@@ -123,13 +155,32 @@ export function ExportCenter({ lists, jobs, top }: {
           <div className="rounded-lg bg-slate-50 p-3 text-sm">
             {ready ? (count === null ? <span className="text-slate-500">Counting…</span> : <><b className="text-lg tabular-nums">{formatNumber(count)}</b> leads will be exported{count > 100000 ? " (first 100,000)" : ""}</>) : <span className="text-slate-500">Choose what to export</span>}
           </div>
-          <Button className="w-full" size="lg" disabled={!ready || pending || count === 0 || columns.length === 0}
-            onClick={() => start(async () => {
-              try { await downloadExport({ target: { filters }, format, columns, name }); toast.success("Download started"); }
-              catch (e) { toast.error((e as Error).message); }
-            })}>
-            {pending ? <Spinner /> : <Download />} Export {format.toUpperCase()}
+          <label className={cn("flex items-start gap-2 rounded-lg border p-3 text-sm", deleteAfter ? "border-rose-200 bg-rose-50/60" : "border-slate-200")}>
+            <Checkbox className="mt-0.5" checked={deleteAfter} onChange={(e) => setDeleteAfter(e.target.checked)} />
+            <span>
+              <span className="font-medium">Delete from database after download</span>
+              <span className="block text-xs text-slate-500">Frees space on the free 500 MB database. The exported leads and their notes, activities and tasks are removed permanently.</span>
+            </span>
+          </label>
+          <Button className="w-full" size="lg" variant={deleteAfter ? "destructive" : "default"} disabled={!ready || pending || count === 0 || columns.length === 0}
+            onClick={() => (deleteAfter ? setConfirmOpen(true) : runExport())}>
+            {pending ? <Spinner /> : deleteAfter ? <Trash /> : <Download />} {deleteAfter ? `Export ${format.toUpperCase()} & delete` : `Export ${format.toUpperCase()}`}
           </Button>
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogContent title="Export and delete these leads?" description="The file downloads first. Only the leads in that file are then deleted.">
+              <div className="space-y-4 text-sm">
+                <Callout tone="danger">
+                  <b className="tabular-nums">{formatNumber(count ?? 0)}</b> leads will be downloaded and then <b>permanently deleted</b> from the database, together with their notes, activities, tasks and list memberships. This cannot be undone. Keep the downloaded file safe: it will be your only copy.
+                </Callout>
+                {count !== null && count > 100000 ? <Callout tone="warning">This is more than 100,000 leads, so only a download happens. Export in smaller parts (for example by country or city) to delete.</Callout> : null}
+                <p className="text-xs text-slate-500">Deleted leads are no longer checked for duplicates. If you import the same leads again, they will be saved as new.</p>
+                <div className="flex justify-end gap-2">
+                  <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                  <Button variant="destructive" onClick={() => { setConfirmOpen(false); runExport(); }}><Trash /> Download & delete {formatNumber(count ?? 0)}</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <p className="text-xs text-slate-500">CSV cells that could run as spreadsheet formulas are escaped. Files are generated on the server from live data.</p>
         </CardContent>
       </Card>

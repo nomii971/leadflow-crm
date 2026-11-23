@@ -1,7 +1,15 @@
 "use client";
 
+export interface ExportResult {
+  count: number;
+  /** Database time taken before the export read its rows (used by "Export & delete"). */
+  exportedAt: string | null;
+  /** True when the export hit the row cap, so it may not contain every matching lead. */
+  capped: boolean;
+}
+
 /** POSTs an export request and saves the returned file. */
-export async function downloadExport(body: unknown): Promise<void> {
+export async function downloadExport(body: unknown): Promise<ExportResult> {
   const res = await fetch("/api/export", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -15,6 +23,11 @@ export async function downloadExport(body: unknown): Promise<void> {
   const cd = res.headers.get("content-disposition") ?? "";
   const name = /filename="([^"]+)"/.exec(cd)?.[1] ?? "leadflow-export";
   saveBlob(blob, name);
+  return {
+    count: Number(res.headers.get("x-row-count") ?? 0),
+    exportedAt: res.headers.get("x-export-at"),
+    capped: res.headers.get("x-export-capped") === "1",
+  };
 }
 
 export function saveBlob(blob: Blob, name: string) {
