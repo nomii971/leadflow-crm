@@ -5,14 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Callout, PageHeader } from "@/components/ui/misc";
 import { adapterCatalog } from "@/lib/collector/registry";
 import { requireUserOrRedirect } from "@/lib/supabase/server";
+import { HubspotConnect } from "@/components/integrations/hubspot-connect";
 
 export const metadata = { title: "Integrations" };
 export const dynamic = "force-dynamic";
 const TONE: Record<string, string> = { connected: "emerald", available: "emerald", not_configured: "amber", unavailable: "slate", error: "rose" };
 
 export default async function IntegrationsPage() {
-  await requireUserOrRedirect();
-  const adapters = await adapterCatalog();
+  const { supabase } = await requireUserOrRedirect();
+  const [adapters, hs] = await Promise.all([adapterCatalog(), supabase.rpc("integration_secret_status", { p_provider: "hubspot" })]);
+  const hsStatus = (hs.data ?? { configured: false }) as { configured: boolean; last4?: string; updated_at?: string };
+  const hubspotFromEnv = !!process.env.HUBSPOT_ACCESS_TOKEN?.trim();
   return (
     <>
       <PageHeader icon={<Plug />} title="Integrations" description="Authorized data sources and their live connection status. Status is checked on the server each time this page loads." />
@@ -25,6 +28,11 @@ export default async function IntegrationsPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p className="text-slate-600">{a.status.detail}</p>
+              {a.id === "hubspot" ? (
+                <div className="border-t border-slate-100 pt-3">
+                  <HubspotConnect fromEnv={hubspotFromEnv} saved={hsStatus.configured ? { last4: hsStatus.last4 ?? "", updated_at: hsStatus.updated_at } : null} />
+                </div>
+              ) : null}
               <ul className="space-y-1 text-xs text-slate-500">
                 <li>Pagination: {a.capabilities.pagination ? "yes" : "no"}</li>
                 <li>Reports total results: {a.capabilities.totalCount ? "yes" : "no"}</li>
@@ -51,15 +59,21 @@ export default async function IntegrationsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
-        <CardHeader><CardTitle>Connecting HubSpot (free)</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700">
-          <ol className="list-decimal space-y-1 pl-5">
-            <li>In HubSpot: Settings → Integrations → Private Apps (or Development → Legacy apps) → create an app with scope <code>crm.objects.contacts.read</code>.</li>
-            <li>Copy the access token. Do not paste it anywhere except your hosting environment.</li>
-            <li>In Vercel: Project → Settings → Environment Variables → add <code>HUBSPOT_ACCESS_TOKEN</code>. Locally, put it in <code>.env.local</code>. Redeploy.</li>
-            <li>Reload this page: the HubSpot card should show “Connected”.</li>
+      <Card className="mt-6" id="hubspot-setup">
+        <CardHeader>
+          <CardTitle>Connecting HubSpot (free), step by step</CardTitle>
+          <CardDescription>About 5 minutes. No code and no hosting settings needed.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm text-slate-700">
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>Create a free account at <a className="text-brand-600 underline" href="https://www.hubspot.com/products/crm" target="_blank" rel="noopener noreferrer">hubspot.com</a> (Free CRM), or sign in.</li>
+            <li>In HubSpot, open <b>Settings</b> (gear icon) → <b>Integrations</b> → <b>Private Apps</b>. In newer accounts this is under <b>Development</b> → <b>Legacy apps</b> → <b>Create a legacy app</b> → <b>Private</b>.</li>
+            <li>Name it <b>LeadFlow CRM</b>. On the <b>Scopes</b> tab tick <code>crm.objects.contacts.read</code> (required). <code>crm.objects.companies.read</code> is optional. Do not tick any write scopes.</li>
+            <li>Click <b>Create app</b>, then <b>Show token</b> → <b>Copy</b>. It starts with <code>pat-</code>.</li>
+            <li>Paste it in the HubSpot card above and click <b>Connect HubSpot</b>. The card turns <b>Connected</b>.</li>
+            <li>Go to <Link className="text-brand-600 underline" href="/collector/new">Bulk Lead Collector</Link>, choose <b>HubSpot CRM (free)</b>, pick locations and filters, and start. Contacts are saved as leads with their emails and phone numbers.</li>
           </ol>
+          <Callout tone="info" title="Where the emails and phone numbers come from">HubSpot sends only the contacts, emails and phone numbers that are already in your HubSpot account. It does not look up new ones. Contacts get into HubSpot from Sales Navigator <b>CRM Sync</b> (needs a Sales Navigator plan with CRM Sync, such as Advanced Plus), from your own imports into HubSpot, or from forms and email. LeadFlow then pulls them in with their email and phone fields.</Callout>
         </CardContent>
       </Card>
     </>

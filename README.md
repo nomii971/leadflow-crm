@@ -33,7 +33,7 @@ Stack (all free tier): Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 
 
 ### 1. Supabase
 1. Create a free project at <https://supabase.com>.
-2. **SQL Editor** → paste and run `supabase/migrations/0001_init.sql`, then `0002_contact_fields.sql` and `0003_storage_and_export_delete.sql` (run the files in order).
+2. **SQL Editor** → paste and run `supabase/migrations/0001_init.sql`, then `0002_contact_fields.sql`, `0003_storage_and_export_delete.sql` and `0004_integration_secrets.sql` (run the files in order).
 3. **Authentication → Users → Add user**: your email + a strong password (tick "Auto confirm").
 4. **Authentication → Sign In / Providers**: turn **off** "Allow new users to sign up".
 5. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
@@ -61,7 +61,7 @@ No service-role key is needed: every query runs as the signed-in user under Row 
 4. In Supabase **Authentication → URL Configuration**, set the Site URL to your Vercel URL.
 
 ### 4. Optional: HubSpot source
-HubSpot → Settings → Integrations → Private Apps → create an app with scope `crm.objects.contacts.read` → copy the token into `HUBSPOT_ACCESS_TOKEN` on Vercel → redeploy. The Integrations page shows the live status.
+HubSpot → Settings → Integrations → Private Apps (or Development → Legacy apps) → create an app with scope `crm.objects.contacts.read` → copy the token → paste it on LeadFlow's **Integrations** page. It is checked with HubSpot and stored encrypted in Supabase Vault (`0004_integration_secrets.sql`), used only on the server. Alternatively set `HUBSPOT_ACCESS_TOKEN` on the server; the env var wins. HubSpot only provides the emails and phone numbers already in your HubSpot account.
 
 ---
 

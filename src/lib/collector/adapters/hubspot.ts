@@ -1,5 +1,6 @@
 import "server-only";
 import { findCountry } from "@/lib/locations";
+import { getProviderToken } from "@/lib/integrations/secrets";
 import {
   RetryableSourceError,
   SourceConfigError,
@@ -19,7 +20,7 @@ const PROPERTIES = [
   "numemployees", "lifecyclestage", "createdate",
 ];
 
-const token = () => process.env.HUBSPOT_ACCESS_TOKEN?.trim() || null;
+const token = async () => (await getProviderToken("hubspot"))?.token ?? null;
 
 type Filter = { propertyName: string; operator: string; value?: string; values?: string[] };
 
@@ -89,8 +90,8 @@ function toLead(p: Record<string, string | null>) {
 }
 
 async function hubspotFetch(path: string, init: RequestInit) {
-  const t = token();
-  if (!t) throw new SourceConfigError("HUBSPOT_ACCESS_TOKEN is not set on the server.");
+  const t = await token();
+  if (!t) throw new SourceConfigError("HubSpot is not connected. Paste your private app token on the Integrations page.");
   let res: Response;
   try {
     res = await fetch(`${API}${path}`, {
@@ -131,12 +132,13 @@ export const hubspotAdapter: SourceAdapter = {
     maxResultsPerSearch: SEARCH_RESULT_CAP,
   },
   async status() {
-    if (!token()) {
-      return { state: "not_configured", label: "Not configured", detail: "Set HUBSPOT_ACCESS_TOKEN in your server environment (Vercel project settings)." };
+    const found = await getProviderToken("hubspot");
+    if (!found) {
+      return { state: "not_configured", label: "Not configured", detail: "Paste your HubSpot private app token below to connect." };
     }
     try {
       await hubspotFetch("/crm/v3/objects/contacts?limit=1", { method: "GET" });
-      return { state: "connected", label: "Connected", detail: "Token accepted by HubSpot." };
+      return { state: "connected", label: "Connected", detail: found.source === "env" ? "Token from the server environment, accepted by HubSpot." : "Token accepted by HubSpot." };
     } catch (e) {
       return { state: "error", label: "Connection error", detail: (e as Error).message };
     }
